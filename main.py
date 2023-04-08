@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.neural_network import MLPRegressor
@@ -57,6 +58,7 @@ def create_linear_regression_model(feature_matrix, solution_vector, compare_pred
     # Create logistic regression model
     model = LinearRegression()
     model.fit(feature_matrix, solution_vector)
+    rmse = mean_squared_error(solution_vector, model.predict(feature_matrix), squared=False)
 
     # If user wants to see predictions on input data, print to console
     if compare_predictions:
@@ -65,9 +67,11 @@ def create_linear_regression_model(feature_matrix, solution_vector, compare_pred
         for feature, time in zip(feature_matrix, solution_vector):
             prediction = model.predict([feature.tolist()])[0]
             print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
-        print("\n")
 
-    return model
+    print("Model RMSE: " + str(rmse))
+    print("\n")
+
+    return model, rmse
 
 
 # Linear regression part #####################
@@ -93,7 +97,7 @@ solution_vector = recur_df.iloc[:, 2]  # Only saving time column
 solution_vector = solution_vector.to_numpy()
 
 # Creating linear regression model while printing out prediction comparisons
-create_linear_regression_model(feature_matrix, solution_vector, compare_predictions=True)
+lin_reg_model, lin_reg_rsme = create_linear_regression_model(feature_matrix, solution_vector, compare_predictions=True)
 
 
 # Classification part #####################
@@ -113,7 +117,7 @@ feature_matrix = feature_matrix.to_numpy()
 solution_vector = recur_nonrecur_df.iloc[:, 0]  # Saving only the labels
 solution_vector = solution_vector.to_numpy()
 
-print("Predicting whether or not a tumor is recurr/non-recurr using wpbc.data")
+print("Predicting whether or not a tumor is recur/non-recur using wpbc.data")
 
 # Using logistic regression
 recur_nonrecur_log_model, accuracy = create_logistic_regression_model(feature_matrix, solution_vector, 0.30)
