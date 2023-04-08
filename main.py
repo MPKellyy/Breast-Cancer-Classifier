@@ -5,8 +5,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Lasso
 from sklearn.neural_network import MLPClassifier
 from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
 
 
 # Function that computes creates logistic regression model and its accuracy
@@ -48,24 +50,32 @@ def create_mlp_classifier_model(feature_matrix, solution_vector, test_size):
     return model, accuracy_score(y_test, y_pred)
 
 
-# Function that creates linear regression model and computes RMSE
+# Function that creates lasso model and computes RMSE
 # Can print predictions based on input data by setting compare_predictions to True
 # Inputs:
 # feature_matrix - numpy matrix of features
 # solution_vector - numpy column vector of solutions
-# Returns: linear regression model, RMSE value
-def create_linear_regression_model(feature_matrix, solution_vector, compare_predictions=False):
+# Returns: lasso model, RMSE value
+def create_lasso_model(feature_matrix, solution_vector, test_size, compare_predictions=False):
+    # Split data into training and testing sets
+    x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
+
     # Create logistic regression model
-    model = LinearRegression()
-    model.fit(feature_matrix, solution_vector)
-    rmse = mean_squared_error(solution_vector, model.predict(feature_matrix), squared=False)
+    model = Lasso(alpha=0.5)
+    scaler = StandardScaler()
+    x_train = scaler.fit_transform(x_train)
+    x_test = scaler.fit_transform(x_test)
+
+    model.fit(x_train, y_train)
+    y_pred = model.predict(x_test)
+    # y_pred[y_pred < 0] = 0
+    rmse = mean_squared_error(y_test, y_pred, squared=False)
 
     # If user wants to see predictions on input data, print to console
     if compare_predictions:
         print("Comparing linear regression model predictions to actual values:")
 
-        for feature, time in zip(feature_matrix, solution_vector):
-            prediction = model.predict([feature.tolist()])[0]
+        for prediction, time in zip(y_pred, y_test):
             print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
 
     print("Model RMSE: " + str(rmse))
@@ -80,18 +90,22 @@ def create_linear_regression_model(feature_matrix, solution_vector, compare_pred
 # feature_matrix - numpy matrix of features
 # solution_vector - numpy column vector of solutions
 # Returns: mlp regressor model, RMSE value
-def create_mlp_regression_model(feature_matrix, solution_vector, compare_predictions=False):
+def create_mlp_regression_model(feature_matrix, solution_vector, test_size, compare_predictions=False):
+    # Split data into training and testing sets
+    x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
+
     # Create mlp regressor model
-    model = MLPRegressor(hidden_layer_sizes=(100, 100), max_iter=10000, alpha=0.001, activation="logistic", solver="lbfgs")
-    model.fit(feature_matrix, solution_vector)
-    rmse = mean_squared_error(solution_vector, model.predict(feature_matrix), squared=False)
+    model = MLPRegressor(hidden_layer_sizes=(50, 50), max_iter=10000, alpha=0.001, activation="logistic", solver="lbfgs")
+    model.fit(x_train, y_train)
+    y_pred = model.predict(x_test)
+    # y_pred[y_pred < 0] = 0
+    rmse = mean_squared_error(y_test, y_pred, squared=False)
 
     # If user wants to see predictions on input data, print to console
     if compare_predictions:
         print("Comparing neural net regression predictions to actual values:")
 
-        for feature, time in zip(feature_matrix, solution_vector):
-            prediction = model.predict([feature.tolist()])[0]
+        for prediction, time in zip(y_pred, y_test):
             print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
 
     print("Model RMSE: " + str(rmse))
@@ -123,8 +137,9 @@ solution_vector = recur_df.iloc[:, 2]  # Only saving time column
 solution_vector = solution_vector.to_numpy()
 
 # Creating linear regression model while printing out prediction comparisons
-lin_reg_model, lin_reg_rmse = create_linear_regression_model(feature_matrix, solution_vector, compare_predictions=True)
-mlp_reg_model, mlp_reg_rmse = create_mlp_regression_model(feature_matrix, solution_vector, compare_predictions=True)
+lin_reg_model, lin_reg_rmse = create_lasso_model(feature_matrix, solution_vector, 0.3, compare_predictions=True)
+mlp_reg_model, mlp_reg_rmse = create_mlp_regression_model(feature_matrix, solution_vector, 0.3, compare_predictions=True)
+
 
 # Classification part #####################
 # We are only classifying recur/non-recur
