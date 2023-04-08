@@ -74,6 +74,26 @@ def create_linear_regression_model(feature_matrix, solution_vector, compare_pred
     return model, rmse
 
 
+def create_mlp_regression_model(feature_matrix, solution_vector, compare_predictions=False):
+    # Create mlp regressor model
+    model = MLPRegressor(hidden_layer_sizes=(100, 100), max_iter=10000, alpha=0.001, activation="logistic", solver="lbfgs")
+    model.fit(feature_matrix, solution_vector)
+    rmse = mean_squared_error(solution_vector, model.predict(feature_matrix), squared=False)
+
+    # If user wants to see predictions on input data, print to console
+    if compare_predictions:
+        print("Comparing neural net regression predictions to actual values:")
+
+        for feature, time in zip(feature_matrix, solution_vector):
+            prediction = model.predict([feature.tolist()])[0]
+            print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
+
+    print("Model RMSE: " + str(rmse))
+    print("\n")
+
+    return model, rmse
+
+
 # Linear regression part #####################
 # Loading in dataset
 wpbc_df = pd.read_csv("wpbc.data", header=None)
@@ -97,11 +117,10 @@ solution_vector = recur_df.iloc[:, 2]  # Only saving time column
 solution_vector = solution_vector.to_numpy()
 
 # Creating linear regression model while printing out prediction comparisons
-lin_reg_model, lin_reg_rsme = create_linear_regression_model(feature_matrix, solution_vector, compare_predictions=True)
-
+lin_reg_model, lin_reg_rmse = create_linear_regression_model(feature_matrix, solution_vector, compare_predictions=True)
+mlp_reg_model, mlp_reg_rmse = create_mlp_regression_model(feature_matrix, solution_vector, compare_predictions=True)
 
 # Classification part #####################
-
 # We are only classifying recur/non-recur
 
 # TODO: Currently dropping id values and time values (col 0, 2), they will skew results (time is diff between classes)
