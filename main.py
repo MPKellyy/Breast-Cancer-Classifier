@@ -48,12 +48,12 @@ def create_mlp_classifier_model(feature_matrix, solution_vector, test_size):
     return model, accuracy_score(y_test, y_pred)
 
 
-# Function that computes creates linear regression model
+# Function that creates linear regression model and computes RMSE
 # Can print predictions based on input data by setting compare_predictions to True
 # Inputs:
 # feature_matrix - numpy matrix of features
 # solution_vector - numpy column vector of solutions
-# Returns: linear regression model
+# Returns: linear regression model, RMSE value
 def create_linear_regression_model(feature_matrix, solution_vector, compare_predictions=False):
     # Create logistic regression model
     model = LinearRegression()
@@ -74,6 +74,12 @@ def create_linear_regression_model(feature_matrix, solution_vector, compare_pred
     return model, rmse
 
 
+# Function that creates mlp regressor model and computes RMSE
+# Can print predictions based on input data by setting compare_predictions to True
+# Inputs:
+# feature_matrix - numpy matrix of features
+# solution_vector - numpy column vector of solutions
+# Returns: mlp regressor model, RMSE value
 def create_mlp_regression_model(feature_matrix, solution_vector, compare_predictions=False):
     # Create mlp regressor model
     model = MLPRegressor(hidden_layer_sizes=(100, 100), max_iter=10000, alpha=0.001, activation="logistic", solver="lbfgs")
