@@ -95,7 +95,7 @@ def create_mlp_regression_model(feature_matrix, solution_vector, test_size, comp
     x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
 
     # Create mlp regressor model
-    model = MLPRegressor(hidden_layer_sizes=(50, 50), max_iter=10000, alpha=0.001, activation="logistic", solver="lbfgs")
+    model = MLPRegressor(hidden_layer_sizes=(50, 50), max_iter=10000, alpha=0.001, activation="relu", solver="lbfgs") # relu - lbfgs
     model.fit(x_train, y_train)
     y_pred = model.predict(x_test)
     # y_pred[y_pred < 0] = 0
