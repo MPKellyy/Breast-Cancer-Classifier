@@ -4,46 +4,40 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error
-from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Lasso
 from sklearn.neural_network import MLPClassifier
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 
 
-# Function that computes creates logistic regression model and its accuracy
+# Function that trains classifier model and computes its accuracy
 # Inputs:
 # feature_matrix - numpy matrix of features
 # solution_vector - numpy column vector of solutions
 # test_size - decimal proportion of data used to train model
-# Returns: logistic regression model, decimal value of accuracy as a percentage
-def create_logistic_regression_model(feature_matrix, solution_vector, test_size):
+# model_type - string value of the model to train, defaults to logistic regression
+# Returns: classifier model, decimal value of accuracy as a percentage
+def create_classifier_model(feature_matrix, solution_vector, test_size, model_type):
+    valid_types = ["logistic", "svm", "mlp"]
+
+    assert model_type in valid_types, "Specified model type not valid," \
+                                      " choose one from the following: 'logistic', 'svm', 'mlp'"
+
     # Split data into training and testing sets
     x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
 
-    # Create logistic regression model
-    model = LogisticRegression(max_iter=3000)
+    # Creating model
+    if model_type == "svm":
+        model = SVC()
+    elif model_type == "mlp":
+        model = MLPClassifier(hidden_layer_sizes=(100,), max_iter=4000, activation="tanh", alpha=0.001, solver="adam")
+    else:
+        model = LogisticRegression(max_iter=3000)
+
     model.fit(feature_matrix, solution_vector)
 
     # Predicting with test features
-    y_pred = model.predict(x_test)
-
-    # Returning computed score
-    return model, accuracy_score(y_test, y_pred)
-
-
-# Function that computes creates mlp classifier model and its accuracy
-# Inputs:
-# feature_matrix - numpy matrix of features
-# solution_vector - numpy column vector of solutions
-# test_size - decimal proportion of data used to train model
-# Returns: mlp classifier model, decimal value of accuracy as a percentage
-def create_mlp_classifier_model(feature_matrix, solution_vector, test_size):
-    # Split data into training and testing sets
-    x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
-
-    model = MLPClassifier(hidden_layer_sizes=(100,), max_iter=4000, activation="tanh", alpha=0.001, solver="adam")
-    model.fit(x_train, y_train)
     y_pred = model.predict(x_test)
 
     # Returning computed score
@@ -160,11 +154,15 @@ solution_vector = solution_vector.to_numpy()
 print("Predicting whether or not a tumor is recur/non-recur using wpbc.data")
 
 # Using logistic regression
-recur_nonrecur_log_model, accuracy = create_logistic_regression_model(feature_matrix, solution_vector, 0.30)
-print("Logistic Regression Classification Accuracy: " + str(accuracy))
+recur_nonrecur_log_model, log_accuracy = create_classifier_model(feature_matrix, solution_vector, 0.3, "logistic")
+print("Logistic Regression Classification Accuracy: " + str(log_accuracy))
 
 # Using neural net
-mlp, mlp_accuracy = create_mlp_classifier_model(feature_matrix, solution_vector, 0.30)
+mlp, mlp_accuracy = create_classifier_model(feature_matrix, solution_vector, 0.3, "mlp")
 print("Neural Net Classification Accuracy: ", str(mlp_accuracy))
+
+# Using SVM
+svm, svm_accuracy = create_classifier_model(feature_matrix, solution_vector, 0.3, "svm")
+print("SVM Classification Accuracy: ", str(svm_accuracy))
 #########################################################
 
