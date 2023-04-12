@@ -9,6 +9,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
+from sklearn.decomposition import PCA
 
 
 # Function that trains classifier model and computes its accuracy
@@ -24,8 +25,14 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
     assert model_type in valid_types, "Specified model type not valid," \
                                       " choose one from the following: 'logistic', 'svm', 'mlp'"
 
+    # Feature Selection
+    pca = PCA(n_components=8)
+
+    # Fit and transform the data
+    x_pca = pca.fit_transform(feature_matrix)
+
     # Split data into training and testing sets
-    x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
+    x_train, x_test, y_train, y_test = train_test_split(x_pca, solution_vector, test_size=test_size)
 
     # Creating model
     if model_type == "svm":
@@ -35,7 +42,8 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
     else:
         model = LogisticRegression(max_iter=3000)
 
-    model.fit(feature_matrix, solution_vector)
+    # model.fit(feature_matrix, solution_vector)
+    model.fit(x_pca, solution_vector)
 
     # Predicting with test features
     y_pred = model.predict(x_test)
@@ -51,11 +59,17 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
 # solution_vector - numpy column vector of solutions
 # Returns: lasso model, RMSE value
 def create_lasso_model(feature_matrix, solution_vector, test_size, compare_predictions=False):
+    # Feature Selection
+    pca = PCA(n_components=8)
+
+    # Fit and transform the data
+    x_pca = pca.fit_transform(feature_matrix)
+
     # Split data into training and testing sets
-    x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
+    x_train, x_test, y_train, y_test = train_test_split(x_pca, solution_vector, test_size=test_size)
 
     # Create logistic regression model
-    model = Lasso(alpha=0.5)
+    model = Lasso(alpha=0.7)
     scaler = StandardScaler()
     x_train = scaler.fit_transform(x_train)
     x_test = scaler.fit_transform(x_test)
