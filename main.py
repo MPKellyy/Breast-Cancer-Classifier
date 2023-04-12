@@ -1,15 +1,13 @@
-import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import Lasso
 from sklearn.neural_network import MLPClassifier
 from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-from sklearn.decomposition import PCA
+from sklearn.model_selection import cross_val_score
 
 
 # Function that trains classifier model and computes its accuracy
@@ -25,14 +23,8 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
     assert model_type in valid_types, "Specified model type not valid," \
                                       " choose one from the following: 'logistic', 'svm', 'mlp'"
 
-    # Feature Selection
-    pca = PCA(n_components=8)
-
-    # Fit and transform the data
-    x_pca = pca.fit_transform(feature_matrix)
-
     # Split data into training and testing sets
-    x_train, x_test, y_train, y_test = train_test_split(x_pca, solution_vector, test_size=test_size)
+    x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
 
     # Creating model
     if model_type == "svm":
@@ -40,16 +32,16 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
     elif model_type == "mlp":
         model = MLPClassifier(hidden_layer_sizes=(100,), max_iter=4000, activation="tanh", alpha=0.001, solver="adam")
     else:
-        model = LogisticRegression(max_iter=3000)
+        model = LogisticRegression(max_iter=10000)
 
     # model.fit(feature_matrix, solution_vector)
-    model.fit(x_pca, solution_vector)
+    model.fit(x_train, y_train)
 
     # Predicting with test features
     y_pred = model.predict(x_test)
 
-    # Returning computed score
-    return model, accuracy_score(y_test, y_pred)
+    # Returning computed scores
+    return model, cross_val_score(model, x_test, y_test, cv=4), cross_val_score(model, feature_matrix, solution_vector, cv=4)
 
 
 # Function that creates lasso model and computes RMSE
@@ -59,14 +51,8 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
 # solution_vector - numpy column vector of solutions
 # Returns: lasso model, RMSE value
 def create_lasso_model(feature_matrix, solution_vector, test_size, compare_predictions=False):
-    # Feature Selection
-    pca = PCA(n_components=8)
-
-    # Fit and transform the data
-    x_pca = pca.fit_transform(feature_matrix)
-
     # Split data into training and testing sets
-    x_train, x_test, y_train, y_test = train_test_split(x_pca, solution_vector, test_size=test_size)
+    x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
 
     # Create logistic regression model
     model = Lasso(alpha=0.7)
@@ -85,9 +71,6 @@ def create_lasso_model(feature_matrix, solution_vector, test_size, compare_predi
 
         for prediction, time in zip(y_pred, y_test):
             print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
-
-    print("Model RMSE: " + str(rmse))
-    print("\n")
 
     return model, rmse
 
@@ -116,9 +99,6 @@ def create_mlp_regression_model(feature_matrix, solution_vector, test_size, comp
         for prediction, time in zip(y_pred, y_test):
             print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
 
-    print("Model RMSE: " + str(rmse))
-    print("\n")
-
     return model, rmse
 
 
@@ -146,8 +126,12 @@ solution_vector = solution_vector.to_numpy()
 
 # Creating linear regression model while printing out prediction comparisons
 lin_reg_model, lin_reg_rmse = create_lasso_model(feature_matrix, solution_vector, 0.3, compare_predictions=True)
-mlp_reg_model, mlp_reg_rmse = create_mlp_regression_model(feature_matrix, solution_vector, 0.3, compare_predictions=True)
+print("Linear Regression Model RMSE: " + str(lin_reg_rmse))
+print("\n")
 
+mlp_reg_model, mlp_reg_rmse = create_mlp_regression_model(feature_matrix, solution_vector, 0.3, compare_predictions=True)
+print("MLP Regression Model RMSE: " + str(mlp_reg_rmse))
+print("\n")
 
 # Classification part #####################
 # We are only classifying recur/non-recur
@@ -168,15 +152,21 @@ solution_vector = solution_vector.to_numpy()
 print("Predicting whether or not a tumor is recur/non-recur using wpbc.data")
 
 # Using logistic regression
-recur_nonrecur_log_model, log_accuracy = create_classifier_model(feature_matrix, solution_vector, 0.3, "logistic")
-print("Logistic Regression Classification Accuracy: " + str(log_accuracy))
+recur_nonrecur_log_model, log_test_cv_scores, log_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.3, "logistic")
+print("Logistic Regression Classification Test Cross Validation Scores: " + str(log_test_cv_scores))
+print("Logistic Regression Classification Actual Cross Validation Scores: " + str(log_actual_cv_scores))
+print("\n")
 
 # Using neural net
-mlp, mlp_accuracy = create_classifier_model(feature_matrix, solution_vector, 0.3, "mlp")
-print("Neural Net Classification Accuracy: ", str(mlp_accuracy))
+mlp, mlp_test_cv_scores, mlp_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.1, "mlp")
+print("Neural Net Classification Test Cross Validation Scores: ", str(mlp_test_cv_scores))
+print("Neural Net Classification Actual Cross Validation Scores: ", str(mlp_actual_cv_scores))
+print("\n")
 
 # Using SVM
-svm, svm_accuracy = create_classifier_model(feature_matrix, solution_vector, 0.3, "svm")
-print("SVM Classification Accuracy: ", str(svm_accuracy))
+svm, svm_test_cv_scores, svm_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.3, "svm")
+print("SVM Classification Test Cross Validation Scores: ", str(svm_test_cv_scores))
+print("SVM Classification Cross Actual Cross Validation Scores: ", str(svm_actual_cv_scores))
+print("\n")
 #########################################################
 
