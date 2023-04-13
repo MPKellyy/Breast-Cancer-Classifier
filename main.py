@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
@@ -8,6 +9,11 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+
+# Global Variable(s)
+fig_count = 1
 
 
 # Function that trains classifier model and computes its accuracy
@@ -18,19 +24,19 @@ from sklearn.model_selection import cross_val_score
 # model_type - string value of the model to train, defaults to logistic regression
 # Returns: classifier model, decimal value of accuracy as a percentage
 def create_classifier_model(feature_matrix, solution_vector, test_size, model_type):
-    valid_types = ["logistic", "svm", "mlp"]
+    valid_types = ["Logistic", "SVM", "MLP"]
 
     assert model_type in valid_types, "Specified model type not valid," \
-                                      " choose one from the following: 'logistic', 'svm', 'mlp'"
+                                      " choose one from the following: 'Logistic', 'SVM', 'MLP'"
 
     # Split data into training and testing sets
     x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
 
     # Creating model
-    if model_type == "svm":
+    if model_type == "SVM":
         model = SVC()
-    elif model_type == "mlp":
-        model = MLPClassifier(hidden_layer_sizes=(100,), max_iter=4000, activation="tanh", alpha=0.001, solver="adam")
+    elif model_type == "MLP":
+        model = MLPClassifier(hidden_layer_sizes=(100,), activation="tanh", alpha=0.001, solver="adam", early_stopping=True)
     else:
         model = LogisticRegression(max_iter=10000)
 
@@ -39,6 +45,9 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
 
     # Predicting with test features
     y_pred = model.predict(x_test)
+
+    # Plotting training vs validation
+    plot_training_validation_error(model_type + " Classification Test", "Recurrence Outcomes", y_test, y_pred)
 
     # Returning computed scores
     return model, cross_val_score(model, x_test, y_test, cv=4), cross_val_score(model, feature_matrix, solution_vector, cv=4)
@@ -72,6 +81,10 @@ def create_lasso_model(feature_matrix, solution_vector, test_size, compare_predi
         for prediction, time in zip(y_pred, y_test):
             print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
 
+    # Plotting training vs validation
+    plot_training_validation_error("Linear Regression Recurrence Predictions in Months", "Months", y_test, y_pred)
+    plot_training_validation_error("Linear Regression Recurrence Predictions in Years", "Years", np.floor_divide(y_test, 12), np.floor_divide(y_pred, 12))
+
     return model, rmse
 
 
@@ -99,7 +112,32 @@ def create_mlp_regression_model(feature_matrix, solution_vector, test_size, comp
         for prediction, time in zip(y_pred, y_test):
             print("Prediction: " + str(prediction) + "\t\tActual: " + str(time))
 
+    # Plotting training vs validation
+    plot_training_validation_error("MLP Regressor Recurrence Predictions in Months", "Months", y_test, y_pred)
+    plot_training_validation_error("MLP Regressor Recurrence Predictions in Years", "Years", np.floor_divide(y_test, 12), np.floor_divide(y_pred, 12))
+
     return model, rmse
+
+
+# Visualizes the predictions after training vs actual values (validation step)
+def plot_training_validation_error(fig_title, y_label, y_actual, y_predictions):
+    global fig_count
+
+    sample_range = list(range(1, y_actual.shape[0] + 1))
+    plt.title(fig_title)
+    plt.ylabel(y_label)
+    plt.xlabel("Test Sample #")
+    plt.scatter(sample_range, y_actual, marker="+", label="actual")
+    plt.scatter(sample_range, y_predictions, marker="x", label="prediction")
+
+    plt.xticks(sample_range, rotation=90, fontsize=6)
+    plt.legend(loc="best")
+
+    # Save figure as png
+    plt.savefig("Figure" + str(fig_count)+ ".png", dpi=200)
+    plt.close()
+
+    fig_count += 1
 
 
 # Linear regression part #####################
@@ -152,19 +190,19 @@ solution_vector = solution_vector.to_numpy()
 print("Predicting whether or not a tumor is recur/non-recur using wpbc.data")
 
 # Using logistic regression
-recur_nonrecur_log_model, log_test_cv_scores, log_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.3, "logistic")
+recur_nonrecur_log_model, log_test_cv_scores, log_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.3, "Logistic")
 print("Logistic Regression Classification Test Cross Validation Scores: " + str(log_test_cv_scores))
 print("Logistic Regression Classification Actual Cross Validation Scores: " + str(log_actual_cv_scores))
 print("\n")
 
 # Using neural net
-mlp, mlp_test_cv_scores, mlp_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.1, "mlp")
+mlp, mlp_test_cv_scores, mlp_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.3, "MLP")
 print("Neural Net Classification Test Cross Validation Scores: ", str(mlp_test_cv_scores))
 print("Neural Net Classification Actual Cross Validation Scores: ", str(mlp_actual_cv_scores))
 print("\n")
 
 # Using SVM
-svm, svm_test_cv_scores, svm_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.3, "svm")
+svm, svm_test_cv_scores, svm_actual_cv_scores = create_classifier_model(feature_matrix, solution_vector, 0.3, "SVM")
 print("SVM Classification Test Cross Validation Scores: ", str(svm_test_cv_scores))
 print("SVM Classification Cross Actual Cross Validation Scores: ", str(svm_actual_cv_scores))
 print("\n")
