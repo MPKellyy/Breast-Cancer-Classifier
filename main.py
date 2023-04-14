@@ -4,7 +4,7 @@ from sklearn.linear_model import LogisticRegression, Lasso
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
+from sklearn.svm import SVC, SVR
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, recall_score, confusion_matrix, precision_score, f1_score, \
     accuracy_score
@@ -24,7 +24,7 @@ fig_count = 1
 # Returns: classifier model, dictionary of model metrics
 def create_classifier_model(feature_matrix, solution_vector, test_size, model_type, pos_class="R", show_metrics=False):
     metrics = {"model_type": model_type}
-    valid_types = ["Logistic Regression", "SVM", "MLP Classifier"]
+    valid_types = ["Logistic Regression", "SVM Classifier", "MLP Classifier"]
 
     assert model_type in valid_types, "Specified model type not valid"
 
@@ -32,9 +32,9 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
     x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
 
     # Creating model
-    if model_type == "SVM":
+    if model_type == "SVM Classifier":
         model = SVC()
-    elif model_type == "MLP":
+    elif model_type == "MLP Classifier":
         model = MLPClassifier(hidden_layer_sizes=(100,), activation="tanh", alpha=0.001, solver="adam",
                               early_stopping=True)
     else:
@@ -105,20 +105,24 @@ def create_classifier_model(feature_matrix, solution_vector, test_size, model_ty
 # model_type - string value of the model to train, defaults to linear regression
 # show_metrics - set True to view metrics in console
 # Returns: regression model, dictionary of model metrics
-def create_regression_model(feature_matrix, solution_vector, test_size, model_type="Linear", show_metrics=False):
+def create_regression_model(feature_matrix, solution_vector, test_size, model_type="Linear Regression", show_metrics=False):
     metrics = {"model_type": model_type}
-    valid_types = ["Linear Regression", "MLP Regressor"]
+    valid_types = ["Linear Regression", "MLP Regressor", "SVM Regression"]
 
     assert model_type in valid_types, "Specified model type not valid"
 
     # Split data into training and testing sets
     x_train, x_test, y_train, y_test = train_test_split(feature_matrix, solution_vector, test_size=test_size)
 
-    if model_type == "MLP":
+    if model_type == "MLP Regressor":
         model = MLPRegressor(hidden_layer_sizes=(50, 50), max_iter=10000, alpha=0.001, activation="relu",
                              solver="lbfgs")  # relu - lbfgs
         title1 = "MLP Regressor Recurrence Predictions in Months"
         title2 = "MLP Regressor Recurrence Predictions in Years"
+    elif model_type == "SVM Regression":
+        model = SVR(kernel="rbf")
+        title1 = "SVM Regression Recurrence Predictions in Months", "Months"
+        title2 = "SVM Regression Recurrence Predictions in Years"
     else:
         # Create logistic regression model
         model = Lasso(alpha=0.7)
@@ -206,13 +210,18 @@ solution_vector = recur_df.iloc[:, 2]  # Only saving time column
 solution_vector = solution_vector.to_numpy()
 
 # Creating linear regression model while printing out prediction comparisons
-lin_reg_model, lin_metrics = create_regression_model(feature_matrix, solution_vector, 0.3,
+lin_reg_model, lin_reg_metrics = create_regression_model(feature_matrix, solution_vector, 0.3,
                                                      model_type="Linear Regression", show_metrics=True)
 print("\n")
 
 mlp_reg_model, mlp_reg_metrics = create_regression_model(feature_matrix, solution_vector, 0.3,
                                                          model_type="MLP Regressor", show_metrics=True)
 print("\n")
+
+svm_reg_model, svm_reg_metrics = create_regression_model(feature_matrix, solution_vector, 0.3,
+                                                         model_type="SVM Regression", show_metrics=True)
+print("\n")
+
 
 # Classification part #####################
 # We are only classifying recur/non-recur
@@ -233,7 +242,7 @@ print("Predicting whether or not a tumor is recur/non-recur using wpbc.data")
 
 # Using logistic regression
 print("Logistic Regression")
-log_model, log_metrics = create_classifier_model(feature_matrix, solution_vector, 0.3, "Logistic Regression",
+log_model, log_class_metrics = create_classifier_model(feature_matrix, solution_vector, 0.3, "Logistic Regression",
                                                  pos_class="R", show_metrics=True)
 print("\n")
 
@@ -245,12 +254,12 @@ print("\n")
 
 # Using SVM
 print("SVM")
-svm, svm_metrics = create_classifier_model(feature_matrix, solution_vector, 0.3, "SVM", pos_class="R",
+svm, svm_class_metrics = create_classifier_model(feature_matrix, solution_vector, 0.3, "SVM Classifier", pos_class="R",
                                            show_metrics=True)
 print("\n")
 
 # Exporting all metrics to json
-all_metrics = [lin_metrics, mlp_reg_metrics, log_metrics, mlp_class_metrics, svm_metrics]
+all_metrics = [lin_reg_metrics, mlp_reg_metrics, svm_reg_metrics, log_class_metrics, mlp_class_metrics, svm_class_metrics]
 
 with open("metrics.json", "w") as file:
     json.dump(all_metrics, file, indent=4)
