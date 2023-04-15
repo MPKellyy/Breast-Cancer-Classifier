@@ -121,7 +121,7 @@ def create_regression_model(feature_matrix, solution_vector, test_size, model_ty
         title2 = "MLP Regressor Recurrence Predictions in Years"
     elif model_type == "SVM Regression":
         model = SVR(kernel="rbf")
-        title1 = "SVM Regression Recurrence Predictions in Months", "Months"
+        title1 = "SVM Regression Recurrence Predictions in Months"
         title2 = "SVM Regression Recurrence Predictions in Years"
     else:
         # Create logistic regression model
@@ -129,7 +129,7 @@ def create_regression_model(feature_matrix, solution_vector, test_size, model_ty
         scaler = StandardScaler()
         x_train = scaler.fit_transform(x_train)
         x_test = scaler.fit_transform(x_test)
-        title1 = "Linear Regression Recurrence Predictions in Months", "Months"
+        title1 = "Linear Regression Recurrence Predictions in Months"
         title2 = "Linear Regression Recurrence Predictions in Years"
 
     model.fit(x_train, y_train)
